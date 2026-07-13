@@ -1,0 +1,11 @@
+services:
+  postgres:
+    container_name: infile-postgres
+    image: postgres:18.4-alpine
+    restart: unless-stopped
+    shm_size: 256mb
+    ports:
+      - "5432:5432"
+    environment:
+      TZ: ${TZ}
+      POSTGRES_PASSWORD: ${CONTRA_POSTGRES}
