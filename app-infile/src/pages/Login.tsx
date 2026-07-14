@@ -19,20 +19,27 @@ const Login: React.FC = () => {
   const [present] = useIonToast();
   const router = useIonRouter();
   const { usuario, setUsuario, loadUsuario, setLoadUsuario } = useUsuarioStore();
-  const { biometrico, setBiometrico } = useBiometricoStore();
+  const { biometrico, setBiometrico, loadBiometrico, setLoadBiometrico } = useBiometricoStore();
   const correoRef = useRef<HTMLInputElement>(null);
   const contraRef = useRef<HTMLInputElement>(null);
 
   const [correoValido, setCorreoValido] = useState(false);
   const [contraValido, setContraValido] = useState(false);
+  const [mostrarBio, setMostrarBio] = useState(false);
 
   const [vista, setVista] = useState('btns');
   const [btnLoad, setBtnLoad] = useState(false);
   const [frmValido, setFrmValido] = useState(false);
 
   useEffect(() => {
-
+    setLoadBiometrico(true);
   }, []);
+
+  useEffect(() => {
+    if(loadBiometrico) {
+      if(biometrico) setMostrarBio(true);
+    }
+  }, [loadBiometrico]);
 
   useEffect(() => {
     setFrmValido(false);
@@ -42,13 +49,13 @@ const Login: React.FC = () => {
   async function validarBiometria () {
     try {
       if (!biometrico) {
-        present({message: 'No tienes el login biométrico configurado.', duration: 2000, position: 'top'});
+        present({message: 'No tienes el login biométrico configurado.', duration: 2000, position: 'top', color: 'danger'});
         console.log('no hay biometrico configurado');
         return;
       }
       const res = await BiometricAuth.checkBiometry();
       if (!res.isAvailable) {
-        present({message: 'No has configurado biometría en tu dispositivo.', duration: 2000, position: 'top'});
+        present({message: 'No has configurado biometría en tu dispositivo.', duration: 2000, position: 'top', color: 'danger'});
         return;
       }
       await BiometricAuth.authenticate({
@@ -89,7 +96,7 @@ const Login: React.FC = () => {
         router.push('/activar', 'root', 'replace');
       }
     }).catch(err => {
-      present({message: 'Ocurrió un error al iniciar sesión, verifica tus datos', duration: 2000, position: 'top'});
+      present({message: 'Ocurrió un error al iniciar sesión, verifica tus datos', duration: 2000, position: 'top', color: 'danger'});
       console.log('err login', err);
     });
     setBtnLoad(false);
@@ -111,11 +118,11 @@ const Login: React.FC = () => {
         setBtnLoad(false);
         router.push('/dash', 'root', 'replace');
       }).catch(err => {
-        present({message: 'Ocurrió un error al iniciar sesión, verifica que ya te hayas registrado.', duration: 2000, position: 'top'});
+        present({message: 'Ocurrió un error al iniciar sesión, verifica que ya te hayas registrado.', duration: 3000, position: 'top', color: 'danger'});
         console.log('err login', err);
       });
     } catch (e) {
-      present({message: 'Ocurrió un error al iniciar sesión.', duration: 2000, position: 'top'});
+      present({message: 'Ocurrió un error al iniciar sesión.', duration: 2000, position: 'top', color: 'danger'});
       console.log(e);
     }
   }
@@ -134,7 +141,9 @@ const Login: React.FC = () => {
               <motion.div key="btns" initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y:-20}} transition={{duration: 0.2}} className="w-full">
                 <ButtonComponent text="Login con Google" tipo="google" icono={logoGoogle} onClick={btnGoogle} />
                 <ButtonComponent text="Login con credenciales" tipo="primary" onClick={() => setVista('manual')} />
-                <ButtonComponent text="Login biometrico" tipo="google" icono={fingerPrint} onClick={() => validarBiometria()} />
+                {mostrarBio && (
+                  <ButtonComponent text="Login biometrico" tipo="google" icono={fingerPrint} onClick={() => validarBiometria()} />
+                )}
                 <p className="text-center mt-8">¿Olvidaste tu contraseña? <Link className="!text-sky-700 active:!text-sky-800" to='/resetpw' replace>Recuperala</Link></p>
                 <p className="text-center mt-4">¿No tienes una cuenta? <Link className="!text-sky-700 active:!text-sky-800" to='/registro' replace>Registrate</Link></p>
               </motion.div>

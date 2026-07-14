@@ -9,19 +9,17 @@ import { posts } from "../api/posts";
 
 import { useUsuarioStore } from "../store/usuario";
 
-const Home: React.FC = () => {
+const Favs: React.FC = () => {
   const { usuario, loadUsuario, setLoadUsuario } = useUsuarioStore();
 
   const contentRef = useRef<HTMLIonContentElement>(null);
-  const notRef = useRef<HTMLDivElement>(null);
   
   const [lista, setLista] = useState<any[]>([]);
-  const [categorias, setCategorias] = useState<any[]>([]);
-  const [catSelect, setCatSelect] = useState<any>(null);
   const [pagina, setPagina] = useState(1);
   const [iniciales, setIniciales] = useState('');
   const [postSelect, setPostSelect] = useState<any>(null);
-  const [relacionados, setRelacionados] = useState<any[]>([]);
+  //temporal
+  const [favorito, setFavorito] = useState(false);
 
   useEffect(() => {
     setLoadUsuario(true);
@@ -29,31 +27,19 @@ const Home: React.FC = () => {
   
   useEffect(() => {
     if(loadUsuario) {
-      llenarCategorias();
+      llenarLista();
     }
   }, [loadUsuario]);
 
   useIonViewWillEnter(() => {
     contentRef.current?.scrollToTop(300);
-    setCatSelect(null);
     setPagina(1);
-    llenarCategorias();
+    llenarLista();
   });
 
-  async function llenarCategorias() {
+  async function llenarLista() {
     setIniciales(usuario.nombres[0].toUpperCase() + usuario.apellidos[0].toUpperCase());
-    await posts.getCategorias().then((res: any) => {
-      console.log('res categorias', res);
-      setCategorias(res.lista);
-    }).catch(err => {
-      console.log('err categorias', err);
-    });
-    llenarLista();
-  }
-
-  async function llenarLista(categoria?: any) {
-    contentRef.current?.scrollToTop(300);
-    await posts.getPosts(usuario.access_token, 1, categoria ? categoria : null).then((res: any) => {
+    await posts.getFavoritos(usuario.access_token, 1).then((res: any) => {
       console.log('llenado de postgres', res);
       setLista(res.lista);
     }).catch(err => {
@@ -64,7 +50,7 @@ const Home: React.FC = () => {
   async function paginar(e: InfiniteScrollCustomEvent) {
     let next = pagina;
     next++;
-    await posts.getPosts(usuario.access_token, next, catSelect ? catSelect : null).then((res: any) => {
+    await posts.getFavoritos(usuario.access_token, next).then((res: any) => {
       if (res.lista.length == 0) {
         e.target.complete();
         return;
@@ -96,38 +82,8 @@ const Home: React.FC = () => {
   }
 
   async function abrirPost(item: any) {
-    await posts.getRelacionados(usuario.access_token, item.id).then((res: any) => {
-      console.log('rel', res);
-      console.log(item);
-      setPostSelect(item);
-      setRelacionados(res.lista);
-    }).catch(err => {
-    });
-  }
-
-  async function abrirRelacionado(item: any) {
-    notRef.current?.scrollTo({top: 0, behavior: 'smooth'});
-    await posts.getPost(usuario.access_token, item.id).then((res: any) => {
-      console.log('res rel', res);
-      abrirPost(res.noticia);
-    }).catch(err => {
-      console.log(err);
-    });
-  }
-
-  async function cerrarPost() {
-    setPostSelect(null);
-    setRelacionados([]);
-  }
-
-  async function cambiarCategoria(item?: any) {
-    if (item) {
-      setCatSelect(item);
-      llenarLista(item.id);
-    } else {
-      setCatSelect(null);
-      llenarLista();
-    }
+    console.log(item);
+    setPostSelect(item);
   }
 
   return (
@@ -136,30 +92,17 @@ const Home: React.FC = () => {
         <AnimatePresence mode="wait">
           <motion.div key="div" initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y:-20}} transition={{duration: 0.2}} className="w-full flex flex-col items-center justify-center p-4">
             <div className="w-full flex justify-between !my-8">
-              <h2 className="!m-0">Inicio</h2>
+              <h2 className="!m-0">Favoritos</h2>
               <div className="bg-black rounded-full text-white font-semibold px-2 py-2">{iniciales}</div>
             </div>
-            <div className="w-full mb-8">
-              <p className="w-full text-sm text-gray-400 !m-0 !mb-2">Filtrar por categoria</p>
-              {catSelect && (
-                <div className="w-full flex flex-wrap justify-start">
-                  <motion.div layoutId={`cat-${catSelect.id}`} className={`!mr-1 !py-2 !px-4 rounded-lg text-xs bg-blue-600 text-white`}>{catSelect.nombre}</motion.div>
-                  <div onClick={() => cambiarCategoria()} className={`!mr-1 !py-2 !px-4 rounded-lg text-xs bg-gray-200 text-gray-600`}>X</div>
-                </div>
-              )}
-              {!catSelect && (
-                <div className="w-full flex flex-wrap">
-                  {!catSelect && categorias.map((item: any) => (
-                    <motion.div layoutId={`cat-${item.id}`} onClick={() => cambiarCategoria(item)} className={`!mr-1 !py-2 !px-4 rounded-lg text-xs bg-gray-200 text-gray-600`} key={item.id}>{item.nombre}</motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
             <ul className="w-full">
+              {lista.length == 0 && (
+                <div className="w-full text-gray-400 text-center text-sm">Todavía no tienes favoritos</div>
+              )}
               {lista.map((item: any) => (
                 <li onClick={() => abrirPost(item)} key={item.id} className="!mb-4 !rounded-xl !border border-gray-100 shadow-sm !overflow-hidden">
                   <div className="w-full aspect-[2/1] overflow-hidden flex items-center">
-                    <motion.img className="w-full" src={item.imagen} alt="" />
+                    <motion.img layoutId={`img-${item.id}`} className="w-full" src={item.imagen} alt="" />
                   </div>
                   <div className="!p-4">
                     <h4 className="!mb-4 !mt-0">{item.titulo}</h4>
@@ -185,9 +128,8 @@ const Home: React.FC = () => {
         </AnimatePresence>
         <AnimatePresence>
           {postSelect && (
-            <motion.div onClick={() => cerrarPost()} className="fixed inset-0 bg-black/70 z-50" initial={{ opacity: 0}} animate={{opacity: 1}} exit={{ opacity: 0 }}>
+            <motion.div onClick={() => setPostSelect(null)} className="fixed inset-0 bg-black/70 z-50" initial={{ opacity: 0}} animate={{opacity: 1}} exit={{ opacity: 0 }}>
               <motion.div
-                ref={notRef}
                 onClick={(e) => e.stopPropagation()}
                 className="mt-20 w-full h-full overflow-y-scroll bg-white !p-4 rounded-t-xl"
                 initial={{ y: "100%" }}
@@ -195,7 +137,7 @@ const Home: React.FC = () => {
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 280, damping: 30 }}
               >
-                <button className="w-full" onClick={() => cerrarPost()}>
+                <button className="w-full" onClick={() => setPostSelect(null)}>
                   <IonIcon className="text-xl text-blue-600" icon={chevronDown} />
                 </button>
                 <div className="w-full aspect-square rounded-lg overflow-hidden !mb-4">
@@ -204,6 +146,7 @@ const Home: React.FC = () => {
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 280, damping: 30 }}
+                    layoutId={`img-${postSelect.id}`}
                     className="w-full"
                     src={postSelect.imagen}
                     alt=""
@@ -215,20 +158,7 @@ const Home: React.FC = () => {
                     <span key={tagI} className="!py-1 !px-2 !bg-blue-600 !mr-1 !rounded-lg text-xs text-white">{tag}</span>
                   ))}
                 </div>
-                <p className="mb-16">{postSelect.descripcion}</p>
-                <p className="text-lg text-gray-500 mb-8">Posts relacionados</p>
-                <ul className="w-full mb-24">
-                  {relacionados.map((item: any) => (
-                    <li onClick={() => abrirRelacionado(item)} key={item.id} className="!mb-4 !rounded-xl !border border-gray-100 shadow-sm !overflow-hidden">
-                      <div className="w-full aspect-[4/1] overflow-hidden flex items-center">
-                        <motion.img layoutId={`img-${item.id}`} className="w-full" src={item.imagen} alt="" />
-                      </div>
-                      <div className="!p-4">
-                        <h4 className="!mt-0 !mb-0">{item.titulo}</h4>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <p className="mb-24">{postSelect.descripcion}</p>
               </motion.div>
             </motion.div>
           )}
@@ -238,4 +168,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default Favs;

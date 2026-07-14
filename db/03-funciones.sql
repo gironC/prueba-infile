@@ -80,3 +80,126 @@ begin
   return true;
 end;
 $$;
+
+create or replace function auth.obtener_noticias(v_usuario_id uuid, v_pagina integer, v_categoria_id uuid default null)
+returns table (
+  id uuid,
+  titulo text,
+  imagen text,
+  descripcion text,
+  fecha timestamptz,
+  es_favorito boolean,
+  categorias text[]
+)
+language sql
+as $$
+  select n.id, n.titulo, n.imagen, n.descripcion, n.fecha,
+    exists (
+      select 1
+      from auth.favorito f
+      where f.usuario_id = v_usuario_id
+        and f.noticia_id = n.id
+    ) as es_favorito,
+    coalesce(
+      (
+        select array_agg(c.nombre order by c.nombre)
+        from auth.categoria_noticia cn
+        join auth.categoria c on c.id = cn.categoria_id
+        where cn.noticia_id = n.id
+      ),
+      array[]::text[]
+    ) as categorias
+  from auth.noticia n
+  where
+    v_categoria_id is null
+    or exists (
+      select 1
+      from auth.categoria_noticia cn
+      where cn.noticia_id = n.id
+        and cn.categoria_id = v_categoria_id
+    )
+  order by n.fecha desc, n.id
+  limit 10
+  offset greatest((coalesce(v_pagina, 1) - 1) * 10, 0);
+$$;
+
+create or replace function auth.obtener_noticia(v_noticia_id uuid)
+returns table (
+  id uuid,
+  titulo text,
+  imagen text,
+  descripcion text,
+  fecha timestamptz,
+  categorias text[]
+)
+language sql
+as $$
+  select n.id, n.titulo, n.imagen, n.descripcion, n.fecha,
+    coalesce(
+      (
+        select array_agg(c.nombre order by c.nombre)
+        from auth.categoria_noticia cn
+        join auth.categoria c on c.id = cn.categoria_id
+        where cn.noticia_id = n.id
+      ),
+      array[]::text[]
+    ) as categorias
+  from auth.noticia n
+  where n.id = v_noticia_id;
+$$;
+
+create or replace function auth.marcar_favorito(v_usuario_id uuid, v_noticia_id uuid, v_favorito boolean)
+returns boolean
+language plpgsql
+as $$
+begin
+  if v_favorito then
+    insert into auth.favorito (usuario_id, noticia_id)
+    values (v_usuario_id, v_noticia_id)
+    on conflict (usuario_id, noticia_id) do nothing;
+  else
+    delete from auth.favorito
+    where usuario_id = v_usuario_id
+      and noticia_id = v_noticia_id;
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function auth.obtener_favoritos(v_usuario_id uuid, v_pagina integer)
+returns table (
+  id uuid,
+  titulo text,
+  imagen text,
+  descripcion text,
+  fecha timestamptz,
+  es_favorito boolean,
+  categorias text[]
+)
+language sql
+as $$
+  select
+    n.id,
+    n.titulo,
+    n.imagen,
+    n.descripcion,
+    n.fecha,
+    true as es_favorito,
+    coalesce(
+      (
+        select array_agg(c.nombre order by c.nombre)
+        from auth.categoria_noticia cn
+        join auth.categoria c on c.id = cn.categoria_id
+        where cn.noticia_id = n.id
+      ),
+      array[]::text[]
+    ) as categorias
+  from auth.noticia n
+  join auth.favorito f on f.noticia_id = n.id
+  where f.usuario_id = v_usuario_id
+  order by n.fecha desc, n.id
+  limit 10
+  offset greatest((coalesce(v_pagina, 1) - 1) * 10, 0);
+$$;
+

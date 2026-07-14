@@ -27,7 +27,7 @@ const Activar: React.FC = () => {
       router.push('/dash');
     }).catch(err => {
       console.log(err);
-      present({message: 'Ocurrió un error, verifica que sea un codigo valido.', duration: 2000, position: 'top'});
+      present({message: 'Ocurrió un error, verifica que sea un codigo valido.', duration: 2000, position: 'top', color: 'danger'});
     });
   }
   return (

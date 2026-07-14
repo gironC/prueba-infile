@@ -1,17 +1,73 @@
 import ky from "ky";
-const url = 'https://dummyjson.com/posts';
+const url = 'http://192.168.1.151:4001';
 
-const consultaInicial = async () => {
-  return await ky.get(`${url}?limit=10&select=title,tags,views`, {
+const getCategorias = async () => {
+  return await ky.get(`${url}/posts/categorias`, {}).json();
+}
+
+const getPosts = async (token: string, pagina: number, categoria?: string) => {
+  return await ky.post(`${url}/posts/posts`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    json: {
+      pagina,
+      categoria: categoria || null
+    }
   }).json();
 }
 
-const consultaScroll = async (pagina: number) => {
-  const siguientes = pagina * 10;
-  return await ky.get(`${url}?limit=10&skip=${siguientes}`).json();
+const getRelacionados = async (token: string, id: string) => {
+  return await ky.post(`${url}/posts/relacionados`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    json: {
+      id
+    }
+  }).json();
+}
+
+const getPost = async (token: string, id: string) => {
+  return await ky.post(`${url}/posts/post`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    json: {
+      id
+    }
+  }).json();
+}
+
+const getFavoritos = async (token: string, pagina: number) => {
+  return await ky.post(`${url}/posts/favoritos`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    json: {
+      pagina
+    }
+  }).json();
+}
+
+const postFavorito = async (token: string, noticia: string, estado: boolean) => {
+  console.log('estado', estado);
+  return await ky.post(`${url}/posts/arFavoritos`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    json: {
+      noticia,
+      estado
+    }
+  }).json();
 }
 
 export const posts = {
-  consultaInicial,
-  consultaScroll
+  getCategorias,
+  getPosts,
+  getPost,
+  getRelacionados,
+  getFavoritos,
+  postFavorito,
 }

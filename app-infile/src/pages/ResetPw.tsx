@@ -47,7 +47,7 @@ const ResetPw: React.FC = () => {
       setVista('otp');
     }).catch(err => {
       console.log(err);
-      present({message: 'Ocurrió un error, verifica que estes registrado.', duration: 2000, position: 'top'});
+      present({message: 'Ocurrió un error, verifica que estes registrado.', duration: 2000, position: 'top', color: 'danger'});
     });
     setBtnLoad(false);
   }
@@ -57,7 +57,7 @@ const ResetPw: React.FC = () => {
     await auth.activarReset(corr, numero).then((res: any) => {
       setVista('pass');
     }).catch(err => {
-      present({message: 'Ocurrió un error, verifica que sea un codigo valido.', duration: 2000, position: 'top'});
+      present({message: 'Ocurrió un error, verifica que sea un codigo valido.', duration: 2000, position: 'top', color: 'danger'});
       console.log(err);
     });
   }
@@ -68,7 +68,7 @@ const ResetPw: React.FC = () => {
       router.push('/login', 'root', 'replace');
     }).catch(err => {
       console.log(err);
-      present({message: 'Ocurrió un error al restablecer tu contraseña.', duration: 2000, position: 'top'});
+      present({message: 'Ocurrió un error al restablecer tu contraseña.', duration: 2000, position: 'top', color: 'danger'});
     });
     setBtnLoad(false);
   }

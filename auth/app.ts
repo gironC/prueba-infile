@@ -1,8 +1,10 @@
 import Fastify from 'fastify';
-import authRouter from './src/modules/auth/auth.routes.js';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+
+import authRouter from './src/modules/auth/auth.routes.js';
+import postsRouter from './src/modules/posts/post.route.js';
 
 export async function buildApp(env: any) {
   const app = Fastify({logger: true});
@@ -26,6 +28,10 @@ export async function buildApp(env: any) {
 
   await app.register(authRouter, {
     prefix: '/auth'
+  });
+
+  await app.register(postsRouter, {
+    prefix: '/posts'
   });
   
   return app;

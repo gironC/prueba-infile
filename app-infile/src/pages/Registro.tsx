@@ -58,7 +58,7 @@ const Registro: React.FC = () => {
       });
     }).catch(err => {
       console.log('error', err);
-      present({message: 'Ocurrió un error al registrarte, verifica que no te has registrado antes.', duration: 2000, position: 'top'});
+      present({message: 'Ocurrió un error al registrarte, verifica que no te has registrado antes.', duration: 3000, position: 'top', color: 'danger'});
       setBtnLoad(false);
       return;
     });
@@ -89,12 +89,12 @@ const Registro: React.FC = () => {
         });
       }).catch(err => {
         console.log('error', err);
-        present({message: 'Ocurrió un error al registrarte, verifica que no te hayas registrado anteriormente.', duration: 2000, position: 'top'});
+        present({message: 'Ocurrió un error al registrarte, verifica que no te hayas registrado anteriormente.', duration: 3000, position: 'top', color: 'danger'});
         setBtnLoad(false);
         return;
       });
     } catch (e) {
-      present({message: 'Ocurrió un error al registrarte.', duration: 2000, position: 'top'});
+      present({message: 'Ocurrió un error al registrarte.', duration: 2000, position: 'top', color: 'danger'});
       console.log(e);
     }
   }
