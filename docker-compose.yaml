@@ -6,3 +6,7 @@ services:
       - ./auth/.env
     networks:
       - red-kinova
+
+networks:
+  red-kinova:
+    external: true
