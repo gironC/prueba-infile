@@ -1,5 +1,5 @@
 import ky from "ky";
-const url = 'http://192.168.1.151:4001';
+const url = 'https://auth.infile.kinova.click';
 
 const getCategorias = async () => {
   return await ky.get(`${url}/posts/categorias`, {}).json();

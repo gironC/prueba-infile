@@ -13,13 +13,13 @@ const Favs: React.FC = () => {
   const { usuario, loadUsuario, setLoadUsuario } = useUsuarioStore();
 
   const contentRef = useRef<HTMLIonContentElement>(null);
+  const notRef = useRef<HTMLDivElement>(null);
   
   const [lista, setLista] = useState<any[]>([]);
   const [pagina, setPagina] = useState(1);
   const [iniciales, setIniciales] = useState('');
   const [postSelect, setPostSelect] = useState<any>(null);
-  //temporal
-  const [favorito, setFavorito] = useState(false);
+  const [relacionados, setRelacionados] = useState<any[]>([]);
 
   useEffect(() => {
     setLoadUsuario(true);
@@ -82,9 +82,29 @@ const Favs: React.FC = () => {
   }
 
   async function abrirPost(item: any) {
-    console.log(item);
-    setPostSelect(item);
+    await posts.getRelacionados(usuario.access_token, item.id).then((res: any) => {
+      console.log('rel', res);
+      console.log(item);
+      setPostSelect(item);
+      setRelacionados(res.lista);
+    }).catch(err => {
+    });
   }
+
+  async function abrirRelacionado(item: any) {
+      notRef.current?.scrollTo({top: 0, behavior: 'smooth'});
+      await posts.getPost(usuario.access_token, item.id).then((res: any) => {
+        console.log('res rel', res);
+        abrirPost(res.noticia);
+      }).catch(err => {
+        console.log(err);
+      });
+    }
+  
+    async function cerrarPost() {
+      setPostSelect(null);
+      setRelacionados([]);
+    }
 
   return (
     <IonPage>
@@ -102,7 +122,7 @@ const Favs: React.FC = () => {
               {lista.map((item: any) => (
                 <li onClick={() => abrirPost(item)} key={item.id} className="!mb-4 !rounded-xl !border border-gray-100 shadow-sm !overflow-hidden">
                   <div className="w-full aspect-[2/1] overflow-hidden flex items-center">
-                    <motion.img layoutId={`img-${item.id}`} className="w-full" src={item.imagen} alt="" />
+                    <motion.img className="w-full" src={item.imagen} alt="" />
                   </div>
                   <div className="!p-4">
                     <h4 className="!mb-4 !mt-0">{item.titulo}</h4>
@@ -128,8 +148,9 @@ const Favs: React.FC = () => {
         </AnimatePresence>
         <AnimatePresence>
           {postSelect && (
-            <motion.div onClick={() => setPostSelect(null)} className="fixed inset-0 bg-black/70 z-50" initial={{ opacity: 0}} animate={{opacity: 1}} exit={{ opacity: 0 }}>
+            <motion.div onClick={() => cerrarPost()} className="fixed inset-0 bg-black/70 z-50" initial={{ opacity: 0}} animate={{opacity: 1}} exit={{ opacity: 0 }}>
               <motion.div
+                ref={notRef}
                 onClick={(e) => e.stopPropagation()}
                 className="mt-20 w-full h-full overflow-y-scroll bg-white !p-4 rounded-t-xl"
                 initial={{ y: "100%" }}
@@ -137,7 +158,7 @@ const Favs: React.FC = () => {
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 280, damping: 30 }}
               >
-                <button className="w-full" onClick={() => setPostSelect(null)}>
+                <button className="w-full" onClick={() => cerrarPost()}>
                   <IonIcon className="text-xl text-blue-600" icon={chevronDown} />
                 </button>
                 <div className="w-full aspect-square rounded-lg overflow-hidden !mb-4">
@@ -146,7 +167,6 @@ const Favs: React.FC = () => {
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 280, damping: 30 }}
-                    layoutId={`img-${postSelect.id}`}
                     className="w-full"
                     src={postSelect.imagen}
                     alt=""
@@ -158,7 +178,20 @@ const Favs: React.FC = () => {
                     <span key={tagI} className="!py-1 !px-2 !bg-blue-600 !mr-1 !rounded-lg text-xs text-white">{tag}</span>
                   ))}
                 </div>
-                <p className="mb-24">{postSelect.descripcion}</p>
+                <p className="mb-16">{postSelect.descripcion}</p>
+                <p className="text-lg text-gray-500 mb-8">Posts relacionados</p>
+                <ul className="w-full mb-24">
+                  {relacionados.map((item: any) => (
+                    <li onClick={() => abrirRelacionado(item)} key={item.id} className="!mb-4 !rounded-xl !border border-gray-100 shadow-sm !overflow-hidden">
+                      <div className="w-full aspect-[4/1] overflow-hidden flex items-center">
+                        <motion.img layoutId={`img-${item.id}`} className="w-full" src={item.imagen} alt="" />
+                      </div>
+                      <div className="!p-4">
+                        <h4 className="!mt-0 !mb-0">{item.titulo}</h4>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </motion.div>
             </motion.div>
           )}
