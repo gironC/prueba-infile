@@ -12,6 +12,9 @@ Aplicación móvil desarrollada con **Ionic React** como parte de una prueba té
 - Inicio de sesión mediante autenticación biométrica.
 - Persistencia de sesión.
 - Consumo de API mediante JWT.
+- Listado de noticias.
+- Adición de noticias a favoritos.
+- Noticias relacionadas.
 
 ---
 
